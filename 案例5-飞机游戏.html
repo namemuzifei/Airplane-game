@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>案例5-飞机游戏</title>
+	<style>
+		.stage{
+			margin:10px auto 0;
+			width:70%;
+			height:600px;
+			background-color:black;
+			position:relative;
+		}
+		
+	</style>
+</head>
+<body>
+	<div class="stage"></div>
+
+
+	<script>
+		// 获取舞台元素
+		var stage = document.querySelector( '.stage' );
+
+		// 定义用于获取[m,n]之间的随机数的函数
+		function getRandom( m,n ){
+			return Math.floor( (n-m+1)*Math.random() ) + m
+		}
+
+		// 子弹对象由于有多个，创建对象采用构造器和原型的方式
+		// 子弹构造器--存储属性
+		function Bullet(){
+			// 每次创建单个子弹dom元素
+			this.ele = document.createElement( 'div' );
+			// 为子弹dom元素配置样式
+			this.ele.style.width = '20px';
+			this.ele.style.height = '20px';
+			this.ele.style.borderRadius = '50%';
+			this.ele.style.position = 'absolute';
+			// 每次为每个子弹dom元素配置相应的不同样式
+			this.ele.style.top = getRandom(0,100)+'px';
+			this.ele.style.left = getRandom(0,100)+'px';
+			this.ele.style.backgroundColor='rgb('+getRandom(50,255)+','+getRandom(50,255)+','+getRandom(50,255)+')';
+			// 将新创建的子弹dom元素插入到stage元素中
+			stage.appendChild( this.ele );
+
+			// 获取子弹移动的速度与方向
+			// 子弹横向运动速度
+			this.speedX = getRandom( 5,10 );
+			// 子弹横向运动方向
+			this.speedX = Math.random() > 0.5 ? this.speedX : -1*this.speedX;
+
+			// 子弹纵向运动速度
+			this.speedY = getRandom( 5,10  );
+			// 子弹纵向运动方向
+			this.speedY = Math.random() > 0.5 ? this.speedY : -1*this.speedY;
+		}
+		// 子弹原型--存储方法
+		Bullet.prototype.move = function(){
+			//每次调用move方法，先获取子弹当前的位置
+			var oldTop = this.ele.offsetTop;
+			var oldLeft = this.ele.offsetLeft;
+
+			// 子弹运动
+			// 判断条件，使子弹碰到边缘时会反弹
+			// 当子弹碰到.stage的上下边缘时
+			if( oldTop <= 0 || oldTop >= stage.clientHeight - this.ele.offsetHeight ){
+				this.speedY *= -1;    //垂直方向变向
+			}
+			// 当子弹碰到.stage的左右边缘时
+			if( oldLeft <= 0 || oldLeft >= stage.clientWidth - this.ele.offsetWidth ){
+				this.speedX *= -1;    //垂直方向变向
+			}
+			// 子弹绝对定位变化
+			this.ele.style.top = oldTop + this.speedY + 'px';
+			this.ele.style.left = oldLeft + this.speedX + 'px';
+
+		}
+
+
+		// 创建用于判断按键按下后飞机状态的函数
+		function keyDown(e){
+			// 先判断按下的键是否是四个方向键
+			if( plane.keyStatus.hasOwnProperty( e.keyCode ) ){
+				// 若按下的键为4个方向键其中的一个，则将相应的键属性的值改为true
+				plane.keyStatus[e.keyCode] = true;
+				// console.log(plane.keyStatus);
+			}
+			return false;
+		}
+
+		// 创建用于判断按键松开后飞机状态的函数
+		function keyUp(e){
+			// 先判断松开的键是否是四个方向键
+			if( plane.keyStatus.hasOwnProperty( e.keyCode ) ){
+				// 若松开的键为4个方向键其中的一个，则将相应的键属性的值改为false
+				plane.keyStatus[e.keyCode] = false;
+			}
+			return false;
+		}
+		// 创建飞机对象，由于只需要一个，因此采用字面量的方式
+		var plane = {
+			keyStatus : {
+				'37' : false,
+				'38' : false,
+				'39' : false,
+				'40' : false,
+			},
+			speed : 10,    //飞机移动的速度
+			// 创建飞机dom元素
+			ele : document.createElement( 'div' ),
+			// 设定初始化方法，设置飞机dom元素初始样式
+			initialism : function(){
+				this.ele.style.width = '32px';
+				this.ele.style.height = '32px';
+				this.ele.style.background = 'url(plane.png) no-repeat';
+				this.ele.style.position = 'absolute';
+				this.ele.style.top = '50%';
+				this.ele.style.left = '50%';
+				// 将飞机dom元素插入到stage元素中
+				stage.appendChild( this.ele );
+
+				var that = this;    //缓存this，防止this丢失
+				// 为飞机绑定键盘按下事件
+				document.addEventListener( 'keydown',keyDown );
+				// 为飞机绑定键盘松开事件
+				document.addEventListener( 'keyup',keyUp );
+			},
+			move : function(){
+				//飞机最多可以移动到的右侧的横坐标
+				var plane_maxLeft = stage.clientWidth-this.ele.offsetWidth;
+				//飞机最多可以移动到的下侧的纵坐标
+				var plane_maxTop = stage.clientHeight-this.ele.offsetHeight;
+
+				// 每次调用move函数，都会获取一次飞机当前位置
+				var oldTop = this.ele.offsetTop,
+					oldLeft = this.ele.offsetLeft;
+
+				// console.log( e.keyCode );
+				// console.log( typeof e.keyCode );   //number
+				// 左37，上38，右39，下40
+				// console.log( this.keyStatus[37] );
+				switch( true ){
+					case this.keyStatus[37]:
+						//判断飞机是否即将到达左边缘
+						var newLeft = oldLeft - this.speed > 0 ? oldLeft - this.speed : 0;
+						//移动飞机
+						this.ele.style.left = newLeft + 'px';
+						this.ele.style.transform = 'rotate(-90deg)';
+						break;
+					case this.keyStatus[38]:
+						//判断飞机是否即将到达左边缘
+						var newTop = oldTop - this.speed > 0 ? oldTop - this.speed : 0;
+						//移动飞机
+						this.ele.style.top = newTop + 'px';
+						this.ele.style.transform = 'rotate(0deg)';
+						break;
+					case this.keyStatus[39]:
+						//判断飞机是否即将到达左边缘
+						var newLeft = oldLeft+this.speed < plane_maxLeft ? oldLeft+this.speed : plane_maxLeft;
+						//移动飞机
+						this.ele.style.left = newLeft + 'px';
+						this.ele.style.transform = 'rotate(90deg)';
+						break;
+					case this.keyStatus[40]:
+						//判断飞机是否即将到达左边缘
+						var newTop = oldTop+this.speed < plane_maxTop ? oldTop+this.speed : plane_maxTop;
+						//移动飞机
+						this.ele.style.top = newTop + 'px';
+						this.ele.style.transform = 'rotate(180deg)';
+						break;
+					default:
+						break;
+				}
+			},
+		};
+
+		// 时间显示，使用字面量的方式创建对象
+		var score = {
+			//创建时间显示dom元素
+			ele : document.createElement( 'div' ),
+			initialism : function(){
+				//设置时间显示dom元素的样式
+				this.ele.style.color = '#fff';
+				this.ele.innerHTML = '你已经坚持了0秒';
+				this.ele.position = 'absolute';
+				this.ele.left = '0px';
+				this.ele.top = '0px';
+				//插入到stage容器中
+				stage.appendChild( this.ele );
+			},
+			update : function( value ){
+				this.ele.innerHTML = '你已经坚持了' + value  + '秒';
+			}
+		};
+		// 游戏总控制对象，只有一个，创建对象采用字面量的方式
+		var game = {
+			currentTime : 0,  // 用于记录游戏已经运行的帧数
+			bulletNumber : 2,   //设置子弹总数量
+			current_bulletNumber:0,  //设置当前子弹数量
+			bullet_interval : 0.5,    //设置子弹产生的时间间隔,秒数
+			time_interval : 25,			//设置定时器的间隔时间，决定游戏运行的速度
+
+			timer : null,   		//存储定时器
+			actors : [],		//演员集合，用于存储所有的运动对象
+
+			start : function(){
+				var that = this,    //缓存this，防止this丢失
+					i;
+
+				// 初始化画面
+				// 生成飞机
+				plane.initialism();
+				// 并将飞机对象插入到演员数组中
+				this.actors.push( plane );
+				// 创建时间显示dom元素
+				score.initialism();
+
+				// 设置定时器，使相应对象运动,开始产生动画效果
+				this.timer = setInterval(function(){
+					// 用于记录游戏已经运行的帧数，即记录调用函数的次数
+					that.currentTime++;
+					// 显示游戏已经运行的时间
+					score.update( (that.currentTime*( that.time_interval/1000 )).toFixed(2) );
+					// 创建子弹对象
+					// 设定判断条件，控制子弹数量与产生子弹的时间间隔
+					if( that.current_bulletNumber < that.bulletNumber && that.currentTime%(that.bullet_interval*1000/that.time_interval)==0){
+						// 创建子弹，并加入到演员数组中
+						that.actors.push( new Bullet() );
+						that.current_bulletNumber++;
+					}
+
+					// 遍历演员数组
+					for( i = 0; i < that.actors.length; i++  ){
+						// 调用所有演员的move方法，让所有演员开始运动
+						that.actors[i].move();
+
+						//判断游戏是否结束，即飞机是否与子弹相撞
+						//使用碰撞检测的方法---检测两者之间中心点的距离
+						//遍历子弹
+						
+						if( that.actors[i].constructor == Bullet ){
+							//获取飞机的半径
+							var plane_radius =  plane.ele.offsetHeight/2;
+							// console.log( plane_radius );
+							//获取圆形子弹的半径
+							var bullet_radius =  that.actors[i].ele.offsetHeight/2;
+							// console.log( plane_radius );
+
+							// 获取子弹中心点的位置的纵坐标
+							var bullet_center_top = that.actors[i].ele.offsetTop + bullet_radius;
+							// 获取子弹中心点的位置的横坐标
+							var bullet_center_left = that.actors[i].ele.offsetLeft + bullet_radius;
+
+							// 获取飞机中心点的位置的纵坐标
+							var plane_center_top = plane.ele.offsetTop + plane_radius;
+							// 获取飞机中心点的位置的横坐标
+							var plane_center_left = plane.ele.offsetLeft + plane_radius;
+
+							//当飞机的中心点距离距离子弹的中心点的距离小于飞机的半径时，则碰撞，停止定时器
+							if( Math.pow(plane_center_top-bullet_center_top,2)+Math.pow(plane_center_left-bullet_center_left,2)<Math.pow(plane_radius,2) ){
+								//停止定时器
+								clearInterval( that.timer );
+								//弹出游戏结束画面
+								that.over();
+								
+							}
+						}
+					}
+
+				},this.time_interval);
+			},
+
+			//游戏结束时的画面
+			over : function(){
+				//创建大盒子
+				var div = document.createElement('div');
+				div.style.position = 'absolute';
+				div.style.top = '0';
+				div.style.bottom = '0';
+				div.style.left = '0';
+				div.style.right = '0';
+				div.style.backgroundColor = 'rgba(0,0,0,0.5)'
+				//插入stage元素中
+				stage.appendChild( div );
+
+				//创建按钮
+				var input = document.createElement('input');
+				input.type = 'button';
+				input.value = '再来一次';
+				input.style.position = 'absolute';
+				input.style.top = '50%';
+				input.style.left = '50%';
+				input.style.transform = 'translate(-50%)';
+				//插入div元素中
+				div.appendChild( input );
+
+				var that = this;   //缓存this，防止this丢失
+				//为按钮绑定点击事件
+				input.addEventListener( 'click',function(){
+					that.restart();
+					//再次开始游戏
+					that.start();
+
+				} );
+			},
+			restart : function(){
+				//清除上次游戏产生的dom元素
+				stage.innerHTML = '';
+				//重置当前子弹数量
+				this.current_bulletNumber = 0;
+				//清空演员数组
+				this.actors = [];
+				//清空运行时间记录
+				this.currentTime = 0;
+			},
+		};
+
+		//开始游戏
+		game.start();
+	</script>
+</body>
+</html>
